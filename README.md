@@ -1,5 +1,5 @@
 ﻿
-# Ubik Authenticator
+# Ubik Authenticator (WIP!)
 
 This API will serve as an authenticator in your future large scale multi-user or multiplayer project. It's scalable and micro-service oriented.
 
@@ -40,6 +40,8 @@ The configuration is quite easy. By providing C# environement variables, you can
 - The `fake` mode will store account data in the RAM and is transcient. To use for testing purposes only.
 - If you have only on Redis endpoint, don't put any `;` in the list.
 
+Don't forget to configure the data structure of your user's accounts. It's in [structure.json](/Properties/structures.json)
+
 # How to use
 
 This authenticator takes the form of an API and has two main routes: `/servers` and `/players`.
@@ -48,13 +50,13 @@ In a first time, UbikAuthenticator will receive all registrations from your serv
 Then, all your servers will have to call:
 ```json
 {
-	"method": "POST",
-	"URI": "{{host}}/servers/register/{{SECRET_KEY}}",
-	"body": {
-	  "serverName": "_server_unique_identifier",
-	  "serverUrl": "123.123.123.123:1234"
-	},
-	"returns": "server token"
+  "method": "POST",
+  "URI": "{{host}}/servers/register/{{SECRET_KEY}}",
+  "body": {
+    "serverName": "_server_unique_identifier",
+    "serverUrl": "123.123.123.123:1234"
+  },
+  "returns": "server token"
 }
 ```
 
