@@ -1,0 +1,39 @@
+﻿{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,  
+    "iisExpress": {
+      "applicationUrl": "http://localhost:30825",
+      "sslPort": 44370
+    }
+  },
+  "profiles": {
+    "Authentication": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:7194;http://localhost:5273",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SECRET_KEY": "my_secret_key",
+        "SALT": "S0m3_S4Lt",
+        "IAUTH": "redis", // fake; sqlite; redis
+        "IAUTH.sqlite.path": "F:\\tests\\ubikAuth.db",
+        "IAUTH.redis.endpoints": "XXXXX",
+        "IAUTH.redis.password": "XXXXX;",
+        "IAUTH.redis.user": "XXXXX",
+        "EMAIL_REGEX": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$"
+      }
+    },
+    "IIS Express": {
+      "commandName": "IISExpress",
+      "launchBrowser": true,
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

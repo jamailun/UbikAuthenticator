@@ -1,0 +1,15 @@
+{
+  "account_data": {
+    "username": "@USERNAME",
+    "password": "@PASSWORD",
+    "email": "email required",
+    "phone": "string",
+    "firstname": "string",
+    "lastname": "string",
+    "age": "int",
+    "ratio": "float",
+    "is_nice": "bool",
+    "birthdate": "date required",
+    "other": "json"
+  }
+}
