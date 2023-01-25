@@ -13,7 +13,7 @@ public static class Utils {
 			return _salt;
 		}
 	}
-	public static string HashString(string? text) {
+	public static string HashString(string? text, bool alphaNumOnly = true) {
 		if(String.IsNullOrEmpty(text))
 			return String.Empty;
 
@@ -25,11 +25,8 @@ public static class Utils {
 		byte[] hashBytes = sha.ComputeHash(textBytes);
 
 		// Convert back to a string, removing the '-' that BitConverter adds
-		string hash = BitConverter
-			.ToString(hashBytes)
-			.Replace("-", String.Empty);
-
-		return hash;
+		string hash = BitConverter.ToString(hashBytes);
+		return alphaNumOnly ? hash.Replace("-", String.Empty) : hash;
 	}
 	#endregion
 

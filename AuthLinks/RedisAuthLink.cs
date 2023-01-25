@@ -1,12 +1,17 @@
-﻿using StackExchange.Redis;
-using System.Text.Json;
+﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
+using StackExchange.Redis;
+using System;
+using System.Transactions;
 using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks;
 
-//TODO redo everything here
-
 public class RedisAuthLink : IAuthLink {
+
+	public const string UUID = "__uuid__";
+
+	private const string PREFIX = "accounts:";
+	private const string PREFIX_UNIQUE = PREFIX+"_unique_:";
 
 	private readonly ConnectionMultiplexer _redis;
 
@@ -30,40 +35,100 @@ public class RedisAuthLink : IAuthLink {
 		_redis = ConnectionMultiplexer.Connect(config);
 
 		// Debug
-		Console.WriteLine("Redis connected: " + _redis.GetDatabase().Ping());
+		Console.WriteLine("Redis connected. Ping = " + _redis.GetDatabase().Ping().Milliseconds + "ms");
 	}
 
 	public async Task<Result<string>> LogAccount(LoginRequest request) {
-		string password = Utils.HashString(request.Password);
-
 		var db = _redis.GetDatabase();
-		string key = "account:" + (request.Username ?? "") + ":" + password;
+		string keyData = PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
 
 		// Test existence
-		bool exists = await db.KeyExistsAsync(key);
+		bool exists = await db.KeyExistsAsync(keyData);
 		if(!exists) {
 			return Result<string>.Error("Username or password incorrect.");
 		}
 
 		// Read entries
-		var entries = await db.HashGetAllAsync(key);
+		var entries = await db.HashGetAllAsync(keyData);
 		RedisMap map = new(entries);
 
 		// Return UUID
-		return Result<string>.Success(map["uuid"]);
+		return Result<string>.Success(map[UUID]);
 	}
 
 	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
-		string password = Utils.HashString(request.Password);
-		string key = "account:" + request.Username + ":" + password;
+		// Duplicate test
+		if(UniqueExists(AccountDataStructure.Structure.UsernameField, request.Username))
+			return Result<string>.Error("Duplicate value : username.");
+		foreach(var field in AccountDataStructure.Structure.UniqueFields) {
+			if(UniqueExists(field.Name, request.Fields[field]))
+				return Result<string>.Error($"Duplicate value : {field.Name}.");
+		}
+		// UUID creation and password hash
+		string uuid = GenerateUUID();
+		string keyData = PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
 
+		// Content
 		RedisMap map = new();
-		map["uuid"] = Utils.RandomString(32);
 		map["username"] = request.Username;
+		map[UUID] = uuid;
+		foreach(var kv in request.Fields) {
+			map[kv.Key.Name] = kv.Value;
+		}
 
-		await _redis.GetDatabase().HashSetAsync(key, map.ToArray());
+		// Calls
+		Console.WriteLine("Registering uniques...");
+		var a = await RegisterUniquesAsync(uuid, request);
+		Console.WriteLine("register uniques ? " + a);
+		await _redis.GetDatabase().HashSetAsync(keyData, map.ToArray());
+		await _redis.GetDatabase().KeyPersistAsync(keyData);
+		Console.WriteLine("End of hash set.");
+		return Result<string>.Success(uuid);
+	}
 
-		return Result<string>.Success(map["uuid"]);
+	private async Task<bool> RegisterUniquesAsync(string uuid, RegisterRequest request) {
+		var transaction = _redis.GetDatabase().CreateTransaction();
+		if(transaction == null)
+			return false;
+
+		foreach(var kv in request.Fields) {
+			if(kv.Key.Unique) {
+				string key = PREFIX_UNIQUE + kv.Key.Name + ":" + kv.Value;
+				_ = transaction.StringSetAsync(key, uuid);
+				_ = transaction.KeyPersistAsync(key);
+				Console.WriteLine("new unique: [" + key + "]");
+			}
+		}
+		var usernameKey = PREFIX_UNIQUE + AccountDataStructure.Structure.UsernameField + ":" + request.Username;
+		_ = transaction.StringSetAsync(usernameKey, uuid);
+		_ = transaction.KeyPersistAsync(usernameKey);
+
+		return await transaction.ExecuteAsync();
+	}
+
+	private bool UniqueExists(string key, string value) {
+		Console.WriteLine("Test existence of [" + PREFIX_UNIQUE + key + ":" + value + "]");
+		var res = _redis.GetDatabase().KeyExists(PREFIX_UNIQUE + key + ":" + value);
+		Console.WriteLine("==> " + res);
+		return res;
+	}
+
+	public void DebugClear(bool clear) {
+		var server = _redis.GetServers()[0];
+		Console.WriteLine("> {\n\t" + string.Join(",\n\t", server.Keys())+"\n}");
+		if(!clear)
+			return;
+		foreach(var key in server.Keys())
+			_redis.GetDatabase().KeyDelete(key);
+		Console.WriteLine("> {\n\t" + string.Join(",\n\t", server.Keys())+"\n}");
+	}
+
+	private string GenerateUUID() {
+		string uuid;
+		do {
+			uuid = Utils.RandomString(64);
+		} while(_redis.GetDatabase().KeyExists(PREFIX+uuid));
+		return uuid;
 	}
 
 }

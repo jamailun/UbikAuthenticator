@@ -9,7 +9,7 @@ public class AccountDataStructure {
 	public string UsernameField { get; }
 	public string PasswordField { get; }
 	public List<StructureField> Fields { get; }
-	public List<StructureField> UniqueFields => Fields.FindAll(f => f.Unique);
+	public List<StructureField> UniqueFields { get; }
 
 	private static AccountDataStructure? _Instance;
 	public static AccountDataStructure Structure {
@@ -24,6 +24,8 @@ public class AccountDataStructure {
 		UsernameField = fields.Find(f => f.Type == FieldType.Username)?.Name ?? throw new Exception();
 		PasswordField = fields.Find(f => f.Type == FieldType.Password)?.Name ?? throw new Exception();
 		Fields = fields.FindAll(f => f.Type != FieldType.Username && f.Type != FieldType.Password);
+		// on le calcule que une fois
+		UniqueFields = Fields.FindAll(f => f.Unique);
 	}
 
 	// Must contain @USERNAME and @PASSWORD only

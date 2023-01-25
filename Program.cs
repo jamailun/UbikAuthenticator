@@ -1,3 +1,5 @@
+using UbikMmo.Authenticator.AuthLinks;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -17,6 +19,9 @@ if (app.Environment.IsDevelopment()) {
 
 // Check account structure
 Console.WriteLine(UbikMmo.Authenticator.Structures.AccountDataStructure.Structure);
+// Redis debug
+if(AuthLinkFactory.IAuth.GetType() == typeof(RedisAuthLink))
+    ((RedisAuthLink) AuthLinkFactory.IAuth).DebugClear(false);
 
 //app.UseHttpsRedirection();
 //app.UseAuthorization();

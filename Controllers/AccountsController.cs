@@ -6,10 +6,10 @@ using UbikMmo.Authenticator.Structures;
 namespace UbikMmo.Authenticator.Controllers; 
 
 [ApiController]
-public class PlayersAccountsController : ControllerBase {
+public class AccountsController : ControllerBase {
 
 	[HttpPost]
-	[Route("/players/login/{serverName}")]
+	[Route("/accounts/login/{serverName}")]
 	public async Task<IActionResult> Login([FromBody][ModelBinder(BinderType = typeof(ExtractJson))] string json, string serverName) {
 		// Parse request
 		Result<LoginRequest> requestResult = AccountDataStructure.Structure.TryParseLoginRequest(json);
@@ -34,7 +34,7 @@ public class PlayersAccountsController : ControllerBase {
 	}
 
 	[HttpPost]
-	[Route("/players/register")]
+	[Route("/accounts/register")]
 	public async Task<IActionResult> Register([FromBody][ModelBinder(BinderType = typeof(ExtractJson))] string json) {
 		// Parse request
 		Result<RegisterRequest> requestResult = AccountDataStructure.Structure.TryParseRegisterRequest(json);
@@ -52,7 +52,7 @@ public class PlayersAccountsController : ControllerBase {
 	}
 
 	[HttpPost]
-	[Route("/players/check/{key}/{token}")]
+	[Route("/accounts/check/{key}/{token}")]
 	public IActionResult TestPlayer(string key, string token){
 		if(!ServersManager.Instance.IsSecretKeyValid(key))
 			return BadRequest("Bad secret key for server.");
@@ -63,7 +63,7 @@ public class PlayersAccountsController : ControllerBase {
 	}
 
 	[HttpGet]
-	[Route("/players/debug_list")]
+	[Route("/accounts/debug_list")]
 	public IEnumerable<PlayerAccount> Test() {
 		return PlayersManager.Instance.Debug_GetLoggedPlayers();
 	}
