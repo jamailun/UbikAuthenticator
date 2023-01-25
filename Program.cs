@@ -15,6 +15,9 @@ if (app.Environment.IsDevelopment()) {
     Console.WriteLine("Develoment mode enabled.");
 }
 
+// Check account structure
+Console.WriteLine(UbikMmo.Authenticator.Structures.AccountDataStructure.Structure);
+
 //app.UseHttpsRedirection();
 //app.UseAuthorization();
 

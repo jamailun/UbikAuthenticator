@@ -55,4 +55,8 @@ public static class Utils {
 		return (JsonObject) node;
 	}
 
+	public static bool HasNonASCIIChars(string str) {
+		return (System.Text.Encoding.UTF8.GetByteCount(str) != str.Length);
+	}
+
 }

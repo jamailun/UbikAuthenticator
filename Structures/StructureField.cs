@@ -7,6 +7,8 @@ public class StructureField {
 
 	public StructureField(string name, string value) {
 		this.Name = name;
+		if(name.Length == 0 || name.Contains(' ') || Utils.HasNonASCIIChars(name))
+			throw new Exception("Illegal name value: \"" + name + "\".");
 		foreach(string token in value.Split(" ")) {
 			if("required".Equals(token, StringComparison.OrdinalIgnoreCase)) {
 				Required = true;
