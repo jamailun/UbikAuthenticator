@@ -13,35 +13,6 @@ To use UbikAuthenticator, you will need:
 * If multiple instances exist, use [Redis](https://redis.io/). If not, a SQLite database auto-generated will be enough.
 * Game Servers. Each must handle data storage.
 
-### Installation
-UbikAuthenticator will **require** `dotnet 6.0` and the following packages:
-```bash
-# ASP.Net
-dotnet add package Swashbuckle.AspNetCore
-# SQLite
-dotnet add package System.Data.SQLite.Core
-# Redis
-dotnet add package StackExchange.Redis
-```
-### Configuration
-The configuration is quite easy. By providing C# environement variables, you can parametrize this. Everything can be edited in the classic `Properties/lauchProperties.json` file. Here's what you'll need to know:
-| Parameter name | Effect | Expected values |
-|--|--|--|
-| `ASPNETCORE_ENVIRONMENT`| ASP variable. Use "Production". | `{"Development", "Production"}` |
-| `SECRET_KEY`| The common secret all game-servers will share. They will need it to register. | __ |
-| `SALT`| The salt used in password hashes. | __ |
-| `IAUTH`| The mode of account database system to use. | `{"redis", "sqlite", "fake"}` |
-| `IAUTH.sqlite.path`|**SQLITE:** the path to the storage file. | _A local file path,_ `/var/ubikauth/storage.db` _for example_ |
-| `UAITH.redis.endpoints`| **REDIS:** A list of Redis endpoints. Separated by semi-colons. | _A string with the form_ `redis-endpoint-1:1234;redis-endpoint-2:1234`  |
-| `UAITH.redis.password`| **REDIS:** The password to use in the authentication process | __ |
-| `UAITH.redis.user`| **REDIS:** The username to use in the authentication process | __ |
-
-**Additional notes:**
-- The `fake` mode will store account data in the RAM and is transcient. To use for testing purposes only.
-- If you have only on Redis endpoint, don't put any `;` in the list.
-
-Don't forget to configure the data structure of your user's accounts. It's in [structure.json](/Properties/structures.json)
-
 # How to use
 
 This authenticator takes the form of an API and has two main routes: `/servers` and `/players`.
