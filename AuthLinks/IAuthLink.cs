@@ -2,6 +2,9 @@
 
 namespace UbikMmo.Authenticator.AuthLinks;
 
+/// <summary>
+/// A object linking UbikAuthenticator with a storage system.
+/// </summary>
 public interface IAuthLink {
 
 	/// <summary>
@@ -18,17 +21,4 @@ public interface IAuthLink {
 	/// <returns>an access token for the account</returns>
 	public Task<Result<string>> LogAccount(LoginRequest json);
 
-}
-
-[Serializable]
-public class BasicLogInRequest {
-	public string? email { get; set; }
-	public string? password { get; set; }
-}
-
-[Serializable]
-public class BasicRegisterRequest {
-	public string? username { get; set; }
-	public string? email { get; set; }
-	public string? password { get; set; }
 }
