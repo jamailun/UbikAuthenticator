@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using UbikMmo.Authenticator.Services;
 using UbikMmo.Authenticator.AuthLinks;
+using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.Controllers; 
 
@@ -10,10 +11,13 @@ public class PlayersAccountsController : ControllerBase {
 	[HttpPost]
 	[Route("/players/login/{serverName}")]
 	public async Task<IActionResult> Login([FromBody][ModelBinder(BinderType = typeof(ExtractJson))] string json, string serverName) {
-		Console.WriteLine("[LOGIN] got " + json);
+		// Parse request
+		Result<LoginRequest> requestResult = AccountDataStructure.Structure.TryParseLoginRequest(json);
+		if(!requestResult.IsSuccess)
+			return BadRequest(requestResult.ErrorContent);
 
 		// Player authentication
-		Result<string> result = await AuthLinkFactory.IAuth.LogAccount(json);
+		Result<string> result = await AuthLinkFactory.IAuth.LogAccount(requestResult.SuccessValue);
 		if(!result.IsSuccess) {
 			return BadRequest(result.ErrorContent);
 		}
@@ -32,13 +36,16 @@ public class PlayersAccountsController : ControllerBase {
 	[HttpPost]
 	[Route("/players/register")]
 	public async Task<IActionResult> Register([FromBody][ModelBinder(BinderType = typeof(ExtractJson))] string json) {
-		Console.WriteLine("[REGISTER] got " + json);
+		// Parse request
+		Result<RegisterRequest> requestResult = AccountDataStructure.Structure.TryParseRegisterRequest(json);
+		if(!requestResult.IsSuccess)
+			return BadRequest(requestResult.ErrorContent);
 
-		Result<string> result = await AuthLinkFactory.IAuth.RegisterAccount(json);
+		Result<string> result = await AuthLinkFactory.IAuth.RegisterAccount(requestResult.SuccessValue);
 		if(result.IsSuccess) {
 			string uuid = result.SuccessValue ?? throw new Exception("Internal error.");
 			PlayersManager.Instance.GetOrCreateTokenForPlayer(uuid);
-			return Ok();
+			return Ok("Account created successfully.");
 		}
 
 		return BadRequest(result.ErrorContent);

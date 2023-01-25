@@ -1,7 +1,10 @@
 ﻿using StackExchange.Redis;
 using System.Text.Json;
+using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks;
+
+//TODO redo everything here
 
 public class RedisAuthLink : IAuthLink {
 
@@ -30,20 +33,16 @@ public class RedisAuthLink : IAuthLink {
 		Console.WriteLine("Redis connected: " + _redis.GetDatabase().Ping());
 	}
 
-	public async Task<Result<string>> LogAccount(string json) {
-		BasicLogInRequest? request = JsonSerializer.Deserialize<BasicLogInRequest>(json);
-		if(request == null)
-			return Result<string>.Error("Invalid JSON for the request.");
-
-		string password = Utils.HashString(request.password);
+	public async Task<Result<string>> LogAccount(LoginRequest request) {
+		string password = Utils.HashString(request.Password);
 
 		var db = _redis.GetDatabase();
-		string key = "account:" + (request.email ?? "") + ":" + password;
+		string key = "account:" + (request.Username ?? "") + ":" + password;
 
 		// Test existence
 		bool exists = await db.KeyExistsAsync(key);
 		if(!exists) {
-			return Result<string>.Error("Email or password incorrect.");
+			return Result<string>.Error("Username or password incorrect.");
 		}
 
 		// Read entries
@@ -54,18 +53,13 @@ public class RedisAuthLink : IAuthLink {
 		return Result<string>.Success(map["uuid"]);
 	}
 
-	public async Task<Result<string>> RegisterAccount(string json) {
-		BasicRegisterRequest? request = JsonSerializer.Deserialize<BasicRegisterRequest>(json);
-		if(request == null)
-			return Result<string>.Error("Invalid JSON for the request.");
-
-		string password = Utils.HashString(request.password);
-		string key = "account:" + request.email + ":" + password;
+	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
+		string password = Utils.HashString(request.Password);
+		string key = "account:" + request.Username + ":" + password;
 
 		RedisMap map = new();
 		map["uuid"] = Utils.RandomString(32);
-		map["username"] = request.username ?? "NULL";
-		map["email"] = request.email ?? "NULL";
+		map["username"] = request.Username;
 
 		await _redis.GetDatabase().HashSetAsync(key, map.ToArray());
 

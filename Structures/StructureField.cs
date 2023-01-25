@@ -3,12 +3,15 @@ public class StructureField {
 	public string Name { get; }
 	public FieldType Type { get; }
 	public bool Required { get; }
+	public bool Unique { get; }
 
 	public StructureField(string name, string value) {
 		this.Name = name;
-		foreach(var token in value.Split(" ")) {
-			if(token.Equals("required")) {
+		foreach(string token in value.Split(" ")) {
+			if("required".Equals(token, StringComparison.OrdinalIgnoreCase)) {
 				Required = true;
+			} else if("unique".Equals(token, StringComparison.OrdinalIgnoreCase)) {
+				Unique = true;
 			} else {
 				Type = FieldTypeExtensions.ParseFieldType(token);
 			}

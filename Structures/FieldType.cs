@@ -66,4 +66,26 @@ public static class FieldTypeExtensions {
 		Console.WriteLine("Unknown type : '" + type + "'.");
 		return false;
 	}
+	public static string ToSqliteType(this FieldType type) {
+		return type switch {
+			FieldType.String 
+				or FieldType.Json => "TEXT",
+			FieldType.Integer => "INTEGER",
+			FieldType.Float => "REAL",
+			FieldType.Bool => "BOOLEAN",
+			FieldType.Email => "VARCHAR(64)",
+			FieldType.Date => "DATE",
+			_ => throw new Exception("Unexpected type here: '" + type + "'."),
+		};
+	}
+
+	public static string DefaultValue(this FieldType type) {
+		return type switch {
+			FieldType.Integer
+				or FieldType.Float => "0",
+			FieldType.Bool => "FALSE",
+			FieldType.Date => "\"1971-01-01\"",
+			_ => "\"\"",
+		};
+	}
 }

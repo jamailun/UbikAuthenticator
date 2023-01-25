@@ -1,5 +1,6 @@
 ﻿using System.Data.SQLite;
 using System.Text.Json;
+using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks; 
 
@@ -20,46 +21,55 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 		Initialize();
 	}
 
-	public async Task<Result<string>> LogAccount(string json) {
-		BasicLogInRequest? request = JsonSerializer.Deserialize<BasicLogInRequest>(json);
-		if(request == null)
-			return Result<string>.Error("Invalid JSON for the request.");
-
-		string password = Utils.HashString(request.password);
+	public async Task<Result<string>> LogAccount(LoginRequest request) {
+		string password = Utils.HashString(request.Password);
 
 		using var cmd = new SQLiteCommand(sql);
-		cmd.CommandText = @"SELECT uuid FROM Accounts WHERE email=@EMAIL and passwordHash=@PWD;";
-		cmd.Parameters.AddWithValue("@EMAIL", request.email ?? throw new Exception("Email CANNOT be null."));
+		cmd.CommandText = @"SELECT uuid FROM Accounts WHERE username=@USER and passwordHash=@PWD;";
+		cmd.Parameters.AddWithValue("@USER", request.Username ?? throw new Exception("Email CANNOT be null."));
 		cmd.Parameters.AddWithValue("@PWD", password);
 		await cmd.PrepareAsync();
 
 		string? uuid = (await cmd.ExecuteScalarAsync())?.ToString();
 		if(uuid == null)
-			return Result<string>.Error("Email or password incorrect.");
+			return Result<string>.Error("Username or password incorrect.");
 		return Result<string>.Success(uuid);
 	}
 
-	public async Task<Result<string>> RegisterAccount(string json) {
-		BasicRegisterRequest? request = JsonSerializer.Deserialize<BasicRegisterRequest>(json);
-		if(request == null)
-			return Result<string>.Error("Invalid JSON for the request.");
+	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
+		try {
+			if(ExistsInTable("username", request.Username))
+				return Result<string>.Error("This username is already taken.");
 
-		if(ExistsInTable("username", request.username ?? throw new Exception("Username CANNOT be null.")))
-			return Result<string>.Error("This username is already taken.");
-		if(ExistsInTable("email", request.email ?? throw new Exception("Email CANNOT be null.")))
-			return Result<string>.Error("This email is already linked to an account.");
+			var uuid = GenerateUUID();
+			using var cmd = new SQLiteCommand(sql);
 
-		var uuid = GenerateUUID();
-		using var cmd = new SQLiteCommand(sql);
-		cmd.CommandText = @"INSERT INTO Accounts(uuid, username, email, passwordHash) VALUES(@UUID, @USERNAME, @EMAIL, @PWD);";
-		cmd.Parameters.AddWithValue("@UUID", uuid);
-		cmd.Parameters.AddWithValue("@USERNAME", request.username);
-		cmd.Parameters.AddWithValue("@EMAIL", request.email);
-		cmd.Parameters.AddWithValue("@PWD", Utils.HashString(request.password ?? throw new Exception("password CANNOT be null.")));
-		await cmd.PrepareAsync();
-		await cmd.ExecuteNonQueryAsync();
+			string tableSignature = "uuid, username, passwordHash";
+			string tableValues = "@UUID, @USERNAME, @PWD";
+			cmd.Parameters.AddWithValue("@UUID", uuid);
+			cmd.Parameters.AddWithValue("@USERNAME", request.Username);
+			cmd.Parameters.AddWithValue("@PWD", Utils.HashString(request.Password));
 
-		return Result<string>.Success(uuid);
+			foreach(var kv in request.Fields) {
+				var field = kv.Key;
+				string parameter = "@val_" + field.Name;
+				// append
+				tableSignature += ", " + field.Name;
+				tableValues += ", " + parameter;
+				// parametrize
+				cmd.Parameters.AddWithValue(parameter, kv.Value);
+			}
+			
+			// Set statement
+			cmd.CommandText = $"INSERT INTO Accounts({tableSignature}) VALUES({tableValues});";
+			await cmd.PrepareAsync();
+
+			await cmd.ExecuteNonQueryAsync();
+
+			return Result<string>.Success(uuid);
+		} catch(Exception e) {
+			return Result<string>.Error(e.Message);
+		}
 	}
 
 	private string GenerateUUID() {
@@ -80,11 +90,13 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 	private void Initialize() {
 		using var cmd = new SQLiteCommand(sql);
 		cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Accounts (
-			  uuid VARCHAR(32) PRIMARY KEY,
-			  username VARCHAR(32) NOT NULL UNIQUE,
-			  email VARCHAR(64) NOT NULL UNIQUE,
-			  passwordHash VARCHAR(128) NOT NULL
-			);";
+			  uuid VARCHAR(64) PRIMARY KEY,
+			  username VARCHAR(64) NOT NULL UNIQUE,
+			  passwordHash VARCHAR(256) NOT NULL";
+		foreach(var field in AccountDataStructure.Structure.Fields) {
+			cmd.CommandText += ", " + field.Name + " " + field.Type.ToSqliteType() + " NOT NULL DEFAULT " + field.Type.DefaultValue() + (field.Unique ? " UNIQUE":"");
+		}
+		cmd.CommandText += ");";
 
 		cmd.ExecuteNonQuery();
 	}
