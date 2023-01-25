@@ -2,13 +2,13 @@ using System;
 
 namespace UbikMmo.Authenticator;
 
-public class PlayerAccount {
+public class Account {
 
     public string Uuid { get; }
 
     public string Token { get; }
 
-    public PlayerAccount(string uuid, string token) {
+    public Account(string uuid, string token) {
 		Uuid = uuid;
 		Token = token;
 	}

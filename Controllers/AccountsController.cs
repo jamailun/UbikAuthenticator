@@ -22,7 +22,7 @@ public class AccountsController : ControllerBase {
 			return BadRequest(result.ErrorContent);
 		}
 		string uuid = result.SuccessValue ?? throw new Exception("Internal error.");
-		string token = PlayersManager.Instance.GetOrCreateTokenForPlayer(uuid);
+		string token = AccountsManager.Instance.GetOrCreateTokenForPlayer(uuid);
 
 
 		// Server check : only after authentication
@@ -30,7 +30,7 @@ public class AccountsController : ControllerBase {
 		if(server == null)
 			return BadRequest("Unknown Server '" + serverName + "'.");
 
-		return Ok(new PlayerAccount.PlayerLoggedIn(token, server.Url));
+		return Ok(new Account.PlayerLoggedIn(token, server.Url));
 	}
 
 	[HttpPost]
@@ -44,7 +44,7 @@ public class AccountsController : ControllerBase {
 		Result<string> result = await AuthLinkFactory.IAuth.RegisterAccount(requestResult.SuccessValue);
 		if(result.IsSuccess) {
 			string uuid = result.SuccessValue ?? throw new Exception("Internal error.");
-			PlayersManager.Instance.GetOrCreateTokenForPlayer(uuid);
+			AccountsManager.Instance.GetOrCreateTokenForPlayer(uuid);
 			return Ok("Account created successfully.");
 		}
 
@@ -56,7 +56,7 @@ public class AccountsController : ControllerBase {
 	public IActionResult TestPlayer(string key, string token){
 		if(!ServersManager.Instance.IsSecretKeyValid(key))
 			return BadRequest("Bad secret key for server.");
-		string? uuid = PlayersManager.Instance.GetUuidFromToken(token);
+		string? uuid = AccountsManager.Instance.GetUuidFromToken(token);
 		if(uuid == null)
 			return NotFound("Token not valid.");
 		return Ok(uuid);
@@ -64,8 +64,8 @@ public class AccountsController : ControllerBase {
 
 	[HttpGet]
 	[Route("/accounts/debug_list")]
-	public IEnumerable<PlayerAccount> Test() {
-		return PlayersManager.Instance.Debug_GetLoggedPlayers();
+	public IEnumerable<Account> Test() {
+		return AccountsManager.Instance.Debug_GetLoggedPlayers();
 	}
 
 }

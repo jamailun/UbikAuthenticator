@@ -40,13 +40,12 @@ public class RedisAuthLink : IAuthLink {
 
 	public async Task<Result<string>> LogAccount(LoginRequest request) {
 		var db = _redis.GetDatabase();
-		string keyData = PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
+		string keyData = GetDataKey(request);
 
 		// Test existence
 		bool exists = await db.KeyExistsAsync(keyData);
-		if(!exists) {
-			return Result<string>.Error("Username or password incorrect.");
-		}
+		if(!exists)
+			return Result<string>.NotFoundError("Username or password incorrect.");
 
 		// Read entries
 		var entries = await db.HashGetAllAsync(keyData);
@@ -59,31 +58,34 @@ public class RedisAuthLink : IAuthLink {
 	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
 		// Duplicate test
 		if(UniqueExists(AccountDataStructure.Structure.UsernameField, request.Username))
-			return Result<string>.Error("Duplicate value : username.");
+			return Result<string>.DuplicateError(AccountDataStructure.Structure.UsernameField);
 		foreach(var field in AccountDataStructure.Structure.UniqueFields) {
 			if(UniqueExists(field.Name, request.Fields[field]))
-				return Result<string>.Error($"Duplicate value : {field.Name}.");
+				return Result<string>.DuplicateError(field.Name);
 		}
 		// UUID creation and password hash
 		string uuid = GenerateUUID();
-		string keyData = PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
+		string keyData = GetDataKey(request);
 
 		// Content
 		RedisMap map = new();
-		map["username"] = request.Username;
+		map[AccountDataStructure.Structure.UsernameField] = request.Username;
 		map[UUID] = uuid;
 		foreach(var kv in request.Fields) {
 			map[kv.Key.Name] = kv.Value;
 		}
 
 		// Calls
-		Console.WriteLine("Registering uniques...");
-		var a = await RegisterUniquesAsync(uuid, request);
-		Console.WriteLine("register uniques ? " + a);
+		await RegisterUniquesAsync(uuid, request);
+
 		await _redis.GetDatabase().HashSetAsync(keyData, map.ToArray());
 		await _redis.GetDatabase().KeyPersistAsync(keyData);
-		Console.WriteLine("End of hash set.");
+
 		return Result<string>.Success(uuid);
+	}
+
+	private static string GetDataKey(LoginRequest request) {
+		return PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
 	}
 
 	private async Task<bool> RegisterUniquesAsync(string uuid, RegisterRequest request) {
@@ -96,7 +98,6 @@ public class RedisAuthLink : IAuthLink {
 				string key = PREFIX_UNIQUE + kv.Key.Name + ":" + kv.Value;
 				_ = transaction.StringSetAsync(key, uuid);
 				_ = transaction.KeyPersistAsync(key);
-				Console.WriteLine("new unique: [" + key + "]");
 			}
 		}
 		var usernameKey = PREFIX_UNIQUE + AccountDataStructure.Structure.UsernameField + ":" + request.Username;
@@ -107,10 +108,7 @@ public class RedisAuthLink : IAuthLink {
 	}
 
 	private bool UniqueExists(string key, string value) {
-		Console.WriteLine("Test existence of [" + PREFIX_UNIQUE + key + ":" + value + "]");
-		var res = _redis.GetDatabase().KeyExists(PREFIX_UNIQUE + key + ":" + value);
-		Console.WriteLine("==> " + res);
-		return res;
+		return _redis.GetDatabase().KeyExists(PREFIX_UNIQUE + key + ":" + value);
 	}
 
 	public void DebugClear(bool clear) {

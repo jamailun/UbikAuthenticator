@@ -1,11 +1,11 @@
 ﻿namespace UbikMmo.Authenticator.Services; 
 
-public class PlayersManager {
+public class AccountsManager {
 
-	private readonly Dictionary<string, PlayerAccount> players = new();
+	private readonly Dictionary<string, Account> players = new();
 
-	public static PlayersManager Instance => _instance;
-	private readonly static PlayersManager _instance = new();
+	public static AccountsManager Instance => _instance;
+	private readonly static AccountsManager _instance = new();
 
 	public string GetOrCreateTokenForPlayer(string uuid) {
 		// If already exist, just return token
@@ -27,7 +27,7 @@ public class PlayersManager {
 		return players[token].Uuid;
 	}
 
-	public IEnumerable<PlayerAccount> Debug_GetLoggedPlayers() {
+	public IEnumerable<Account> Debug_GetLoggedPlayers() {
 		return players.Values;
 	}
 
