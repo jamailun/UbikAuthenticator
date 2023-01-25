@@ -38,8 +38,13 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 
 	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
 		try {
+			// Check duplicates
 			if(ExistsInTable("username", request.Username))
 				return Result<string>.Error("This username is already taken.");
+			foreach(var field in Structures.AccountDataStructure.Structure.UniqueFields) {
+				if(ExistsInTable(field.Name, request.Fields[field]))
+					return Result<string>.Error("Duplicate " + field.Name + " value : '" + request.Fields[field]+"'.");
+			}
 
 			var uuid = GenerateUUID();
 			using var cmd = new SQLiteCommand(sql);

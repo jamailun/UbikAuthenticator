@@ -1,5 +1,12 @@
-﻿namespace UbikMmo.Authenticator.Structures;
+﻿using System.Text.RegularExpressions;
+
+namespace UbikMmo.Authenticator.Structures;
+
+
 public class StructureField {
+
+	private const string FIELD_NAME_REGEX = @"^[A-Za-z_\-]{1,32}$";
+
 	public string Name { get; }
 	public FieldType Type { get; }
 	public bool Required { get; }
@@ -7,7 +14,7 @@ public class StructureField {
 
 	public StructureField(string name, string value) {
 		this.Name = name;
-		if(name.Length == 0 || name.Contains(' ') || Utils.HasNonASCIIChars(name))
+		if(! Regex.IsMatch(name, FIELD_NAME_REGEX))
 			throw new Exception("Illegal name value: \"" + name + "\".");
 		foreach(string token in value.Split(" ")) {
 			if("required".Equals(token, StringComparison.OrdinalIgnoreCase)) {
@@ -23,6 +30,6 @@ public class StructureField {
 	}
 
 	public override string ToString() {
-		return "{" + Name + " " + Type.ToString() + (Required ? " REQUIRED" : "") + "}";
+		return "{'" + Name + "' " + Type.ToString() + (Required ? " REQUIRED" : "") + (Required ? " UNIQUE" : "") + "}";
 	}
 }

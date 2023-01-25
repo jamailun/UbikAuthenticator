@@ -9,6 +9,7 @@ public class AccountDataStructure {
 	public string UsernameField { get; }
 	public string PasswordField { get; }
 	public List<StructureField> Fields { get; }
+	public List<StructureField> UniqueFields => Fields.FindAll(f => f.Unique);
 
 	private static AccountDataStructure? _Instance;
 	public static AccountDataStructure Structure {
@@ -108,7 +109,7 @@ public class AccountDataStructure {
 		}
 	}
 
-	public List<StructureField> Parse(JsonObject root) {
+	private static List<StructureField> Parse(JsonObject root) {
 		JsonNode? dataNode = root["account_data"];
 		if(dataNode == null)
 			throw new Exception("structures file must contain 'account_data' entry.");
@@ -130,6 +131,10 @@ public class AccountDataStructure {
 			throw new Exception("ERROR: 'account_data' of structures file must contains exactly one @USERNAME and @PASSWORD.");
 
 		return list;
+	}
+
+	public override string ToString() {
+		return "AccountStructure{@USERNAME, @PASSWORD, " + string.Join(", ", Fields) + "}"; 
 	}
 }
 
