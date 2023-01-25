@@ -65,7 +65,7 @@ public class AccountsController : ControllerBase {
 	[HttpGet]
 	[Route("/accounts/debug_list")]
 	public IEnumerable<Account> Test() {
-		return AccountsManager.Instance.Debug_GetLoggedPlayers();
+		return AccountsManager.Instance.Debug_GetLoggedAccounts();
 	}
 
 }
