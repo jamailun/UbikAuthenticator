@@ -80,13 +80,52 @@ public class RedisAuthLink : IAuthLink {
 		return Result<string>.Success(uuid);
 	}
 
-	public Task DeleteAccount(string uuid) {
-		return new(() => { });
+	public async Task DeleteAccount(string uuid) {
+		var batch = _redis.GetDatabase().CreateBatch();
+		await batch.KeyDeleteAsync(uuid);
+		foreach(var key in await GetKeysOfStringValue(uuid))
+			await batch.KeyDeleteAsync(key);
+		batch.Execute();
 	}
 
-	public Task<Result<List<Dictionary<string, string>>>> ListAccounts() {
+	private async Task<List<RedisKey>> GetKeysOfStringValue(string value) {
+		HashSet<RedisKey> keys = new();
+		foreach(var ep in _redis.GetEndPoints())
+			keys.UnionWith(_redis.GetServer(ep).Keys());
+		keys.RemoveWhere(k => !k.ToString().Contains(PREFIX_UNIQUE));
 
-		return new(() => Result<List<Dictionary<string, string>>>.Error("Not implemented."));
+		List<RedisKey> list = new();
+		var db = _redis.GetDatabase();
+		foreach(var key in keys) {
+			var str = await db.StringGetAsync(key);
+			if(value.Equals(str))
+				list.Add(key);
+		}
+		return list;
+	}
+
+	public async Task<Result<List<Dictionary<string, string>>>> ListAccounts() {
+		HashSet<RedisKey> keys = new();
+		foreach(var ep in _redis.GetEndPoints())
+			keys.UnionWith(_redis.GetServer(ep).Keys());
+		keys.RemoveWhere(k => {
+			string[] tokens = k.ToString().Split(":");
+			if(tokens.Length == 2)
+				return tokens[1].Equals("__unique__");
+			return true;
+		});
+
+		List<Dictionary<string, string>> list = new();
+		foreach(var key in keys) {
+			Dictionary<string, string> values = new();
+			foreach(var kv in await _redis.GetDatabase().HashGetAllAsync(key)) {
+				if(! kv.Name.Equals(AccountDataStructure.Structure.PasswordField))
+					values[kv.Name.ToString()] = kv.Value.ToString();
+			}
+			list.Add(values);
+		}
+
+		return Result<List<Dictionary<string, string>>>.Success(list);
 	}
 
 	#region util methods

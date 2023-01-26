@@ -98,10 +98,15 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 
 		while(reader.Read()) {
 			Dictionary<string, string> values = new() {
-				[AccountDataStructure.Structure.UsernameField] = reader[AccountDataStructure.Structure.UsernameField]?.ToString() ?? ""
+				[IAuthLink.UUID] = reader[IAuthLink.UUID]?.ToString() ?? "",
+				[AccountDataStructure.Structure.UsernameField] = reader[AccountDataStructure.Structure.UsernameField]?.ToString() ?? "",
 			};
 			foreach(var f in AccountDataStructure.Structure.Fields) {
-				values[f.Name] = f.Type.Reformat(reader[f.Name]?.ToString());
+				try {
+					values[f.Name] = f.Type.Reformat(reader[f.Name]?.ToString());
+				} catch(IndexOutOfRangeException) {
+					Console.WriteLine("WARNING: The structure as changed, but not the SQL table ! Field '" + f + "' is not recognized.");
+				}
 			}
 			list.Add(values);
 		}
