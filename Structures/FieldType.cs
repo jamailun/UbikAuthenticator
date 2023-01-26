@@ -88,4 +88,13 @@ public static class FieldTypeExtensions {
 			_ => "\"\"",
 		};
 	}
+
+	public static string Reformat(this FieldType type, string? value) {
+		if(value == null || value == "")
+			return "";
+		if(type == FieldType.Date)
+			if(DateTime.TryParse(value, out DateTime newValue))
+				return newValue.ToString("yyyy-MM-dd");
+		return value;
+	}
 }

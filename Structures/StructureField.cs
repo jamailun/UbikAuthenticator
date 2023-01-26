@@ -15,7 +15,7 @@ public class StructureField {
 
 	public StructureField(string name, string value) {
 		this.Name = name;
-		if(! Regex.IsMatch(name, FIELD_NAME_REGEX) || RedisAuthLink.UUID.Equals(name))
+		if(! Regex.IsMatch(name, FIELD_NAME_REGEX) || IAuthLink.UUID.Equals(name))
 			throw new Exception("Illegal name value: \"" + name + "\".");
 		foreach(string token in value.Split(" ")) {
 			if("required".Equals(token, StringComparison.OrdinalIgnoreCase)) {

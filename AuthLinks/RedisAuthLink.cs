@@ -1,14 +1,10 @@
-﻿using Microsoft.AspNetCore.DataProtection.KeyManagement;
-using StackExchange.Redis;
-using System;
-using System.Transactions;
+﻿using StackExchange.Redis;
+using System.Collections.Generic;
 using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks;
 
 public class RedisAuthLink : IAuthLink {
-
-	public const string UUID = "__uuid__";
 
 	private const string PREFIX = "accounts:";
 	private const string PREFIX_UNIQUE = PREFIX+"_unique_:";
@@ -16,11 +12,11 @@ public class RedisAuthLink : IAuthLink {
 	private readonly ConnectionMultiplexer _redis;
 
 	public RedisAuthLink() {
-		string? redisEndpoints = Environment.GetEnvironmentVariable("IAUTH.redis.endpoints");
-		string? redisUser = Environment.GetEnvironmentVariable("IAUTH.redis.user");
-		string? redisPassword = Environment.GetEnvironmentVariable("IAUTH.redis.password");
+		string? redisEndpoints = Environment.GetEnvironmentVariable("STORE.redis.endpoints");
+		string? redisUser = Environment.GetEnvironmentVariable("STORE.redis.user");
+		string? redisPassword = Environment.GetEnvironmentVariable("STORE.redis.password");
 		if(redisEndpoints == null || redisUser == null || redisPassword == null) {
-			throw new ArgumentException("Could not get environment variable 'IAUTH.redis.{endpoint/user/password}'.");
+			throw new ArgumentException("Could not get environment variable 'STORE.redis.{endpoints/user/password}'.");
 		}
 
 		// Configuration
@@ -52,7 +48,7 @@ public class RedisAuthLink : IAuthLink {
 		RedisMap map = new(entries);
 
 		// Return UUID
-		return Result<string>.Success(map[UUID]);
+		return Result<string>.Success(map[IAuthLink.UUID]);
 	}
 
 	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
@@ -70,7 +66,7 @@ public class RedisAuthLink : IAuthLink {
 		// Content
 		RedisMap map = new();
 		map[AccountDataStructure.Structure.UsernameField] = request.Username;
-		map[UUID] = uuid;
+		map[IAuthLink.UUID] = uuid;
 		foreach(var kv in request.Fields) {
 			map[kv.Key.Name] = kv.Value;
 		}
@@ -84,6 +80,16 @@ public class RedisAuthLink : IAuthLink {
 		return Result<string>.Success(uuid);
 	}
 
+	public Task DeleteAccount(string uuid) {
+		return new(() => { });
+	}
+
+	public Task<Result<List<Dictionary<string, string>>>> ListAccounts() {
+
+		return new(() => Result<List<Dictionary<string, string>>>.Error("Not implemented."));
+	}
+
+	#region util methods
 	private static string GetDataKey(LoginRequest request) {
 		return PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
 	}
@@ -111,16 +117,6 @@ public class RedisAuthLink : IAuthLink {
 		return _redis.GetDatabase().KeyExists(PREFIX_UNIQUE + key + ":" + value);
 	}
 
-	public void DebugClear(bool clear) {
-		var server = _redis.GetServers()[0];
-		Console.WriteLine("> {\n\t" + string.Join(",\n\t", server.Keys())+"\n}");
-		if(!clear)
-			return;
-		foreach(var key in server.Keys())
-			_redis.GetDatabase().KeyDelete(key);
-		Console.WriteLine("> {\n\t" + string.Join(",\n\t", server.Keys())+"\n}");
-	}
-
 	private string GenerateUUID() {
 		string uuid;
 		do {
@@ -128,7 +124,7 @@ public class RedisAuthLink : IAuthLink {
 		} while(_redis.GetDatabase().KeyExists(PREFIX+uuid));
 		return uuid;
 	}
-
+	#endregion
 }
 
 internal class RedisMap {

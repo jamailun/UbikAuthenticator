@@ -11,9 +11,9 @@ public static class AuthLinkFactory {
 	}
 
 	private static IAuthLink Factory() {
-		string? authName = Environment.GetEnvironmentVariable("IAUTH");
+		string? authName = Environment.GetEnvironmentVariable("STORE");
 		if(authName == null) {
-			return MessageThenDefault("No \"IAUTH\" variable set.");
+			return MessageThenDefault("No \"STORE\" variable set.");
 		}
 
 		Console.WriteLine("Building AuthLink '" + authName + "'.");
@@ -21,12 +21,12 @@ public static class AuthLinkFactory {
 			"redis" => new RedisAuthLink(),
 			"sqlite" => new SQLiteAuthLink(),
 			"fake" => new FakeAuthLink(),
-			_ => MessageThenDefault("Unknown IAUTh value: \""+authName+"\".")
+			_ => MessageThenDefault("Unknown STORE value: \"" + authName+"\".")
 		};
 	}
 
 	private static IAuthLink MessageThenDefault(string message) {
-		Console.WriteLine("WARNING: " + message + " Using fake IAuth.");
+		Console.WriteLine("WARNING: " + message + " Using fake storage.");
 		return new FakeAuthLink();
 	}
 

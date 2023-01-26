@@ -7,6 +7,8 @@ namespace UbikMmo.Authenticator.AuthLinks;
 /// </summary>
 public interface IAuthLink {
 
+	public const string UUID = "__uuid__";
+
 	/// <summary>
 	/// Register an account.
 	/// </summary>
@@ -20,5 +22,9 @@ public interface IAuthLink {
 	/// <param name="json">The login request, with username and password.</param>
 	/// <returns>an access token for the account</returns>
 	public Task<Result<string>> LogAccount(LoginRequest json);
+
+	public Task DeleteAccount(string uuid);
+
+	public Task<Result<List<Dictionary<string, string>>>> ListAccounts();
 
 }

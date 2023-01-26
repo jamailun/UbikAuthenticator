@@ -3,16 +3,9 @@
 public class ServersManager {
 
 	private readonly Dictionary<string, Server> servers = new();
-	private readonly string? SecretKey;
 
 	public static ServersManager Instance => _instance;
 	private readonly static ServersManager _instance = new();
-
-	private ServersManager() {
-		SecretKey = Environment.GetEnvironmentVariable("SECRET_KEY");
-		if(SecretKey == null)
-			Console.WriteLine("ERROR: Could not get environment variable 'SECRET_KEY'.");
-	}
 
 	public string? RegisterServer(Server.ServerDTO serverDto) {
 		if(servers.ContainsKey(serverDto.ServerName ?? "NULL")) {
@@ -34,10 +27,6 @@ public class ServersManager {
 
 	public IEnumerable<string> GetServersNames() {
 		return servers.Values.Select(s => s.Name);
-	}
-
-	public bool IsSecretKeyValid(string key) {
-		return SecretKey != null && SecretKey.Equals(key);
 	}
 
 }

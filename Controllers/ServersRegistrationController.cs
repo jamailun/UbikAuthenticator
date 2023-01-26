@@ -1,5 +1,6 @@
 ﻿using UbikMmo.Authenticator.Services;
 using Microsoft.AspNetCore.Mvc;
+using UbikAuthenticator.Authorization;
 
 namespace UbikMmo.Authenticator.Controllers; 
 
@@ -13,23 +14,23 @@ public class ServersRegistrationController : ControllerBase {
     }
 
 	[HttpPost]
-	[Route("/servers/register/{key}")]
+	[Route("/servers/register/")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<string> RegisterServer(string key, Server.ServerDTO serverDto) {
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+	public ActionResult<string> RegisterServer(Server.ServerDTO serverDto) {
+		if(PermissionsGiver.GetPermission(Request) < PermissionLevel.ServerAccess)
+			return Unauthorized(new ApiError("401", "unsufficient permissions value."));
+
 		Console.WriteLine("Received " + serverDto);
 		// Check data is complete
 		if(serverDto.ServerName == null || serverDto.ServerUrl == null)
-			return BadRequest("Invalid form : " + serverDto);
-
-		// Check secret is valid
-		if (!ServersManager.Instance.IsSecretKeyValid(key))
-			return BadRequest("Invalid secret key value.");
+			return BadRequest(new ApiErrorField("400", serverDto.ServerName == null ? "ServerName" : "ServerUrl", "Invalid form : " + serverDto));
 
 		// Try to register the server
 		string? token = ServersManager.Instance.RegisterServer(serverDto);
 		if(token != null)
 			return token;
-		return BadRequest("Server already registered.");
+		return BadRequest(new ApiErrorField("400", "ServerName", "Server already registered."));
 	}
 
 }

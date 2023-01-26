@@ -1,8 +1,8 @@
+using UbikAuthenticator.Authorization;
 using UbikMmo.Authenticator.AuthLinks;
+using UbikMmo.Authenticator.Structures;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -10,18 +10,26 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Develoment mode
 if (app.Environment.IsDevelopment()) {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-    Console.WriteLine("Develoment mode enabled.");
-}
+	Console.WriteLine("Development mode enabled.");
 
-// Check account structure
-Console.WriteLine(UbikMmo.Authenticator.Structures.AccountDataStructure.Structure);
-// Redis debug
-if(AuthLinkFactory.IAuth.GetType() == typeof(RedisAuthLink))
-    ((RedisAuthLink) AuthLinkFactory.IAuth).DebugClear(false);
+	// Swagger
+	app.UseSwagger();
+    app.UseSwaggerUI();
+
+	// Check permissions
+	Console.WriteLine("Loading permissions...");
+	Console.WriteLine(PermissionsGiver.Instance != null);
+
+	// Check account structure
+	Console.WriteLine("Loading account structure...");
+	Console.WriteLine(AccountDataStructure.Structure != null);
+
+	// Check authentication link
+	Console.WriteLine("Loading authentication link...");
+	Console.WriteLine(AuthLinkFactory.IAuth != null);
+}
 
 //app.UseHttpsRedirection();
 //app.UseAuthorization();

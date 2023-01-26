@@ -28,7 +28,10 @@ public class Result<T> {
 	private Result(string errorCode, string? errorField, string errorContent) {
 		this.IsSuccess = false;
 		this.ErrorContent = errorContent;
-		this._apiError = new(errorCode, errorField, errorContent);
+		if(errorField == null)
+			this._apiError = new ApiError(errorCode, errorContent);
+		else
+			this._apiError = new ApiErrorField(errorCode, errorField, errorContent);
 	}
 
 	internal ApiError ToApiError() {
@@ -45,16 +48,17 @@ public class Result<T> {
 
 internal class ApiError {
 	public string code { get; }
-	public string? field { get; }
 	public string details { get; }
 
 	public ApiError(string code, string details) {
 		this.code = code;
 		this.details = details;
 	}
-	public ApiError(string code, string? field, string details) {
-		this.code = code;
+}
+internal class ApiErrorField : ApiError {
+	public string field { get; }
+
+	public ApiErrorField(string code, string field, string details) : base(code, details) {
 		this.field = field;
-		this.details = details;
 	}
 }
