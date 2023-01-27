@@ -7,6 +7,7 @@ public class Result<T> {
 
 	public static Result<T> DuplicateError(string field) => new("400", field, "Duplicate value for field '" + field + "'.");
 	public static Result<T> NotFoundError(string msg) => new("404", null, msg);
+	public static Result<T> InternalError(string msg) => new("500", null, msg);
 
 	public bool IsSuccess { get; }
 	public string? ErrorContent { get; }

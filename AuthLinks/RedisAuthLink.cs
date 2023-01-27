@@ -1,5 +1,6 @@
 ﻿using StackExchange.Redis;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks;
@@ -7,7 +8,9 @@ namespace UbikMmo.Authenticator.AuthLinks;
 public class RedisAuthLink : IAuthLink {
 
 	private const string PREFIX = "accounts:";
-	private const string PREFIX_UNIQUE = PREFIX+"_unique_:";
+	private const string PREFIX_UNIQUE = PREFIX+"unique:";
+	private const string PREFIX_DATA = PREFIX+"data:";
+	private const string PREFIX_USERNAME = PREFIX+"username:";
 
 	private readonly ConnectionMultiplexer _redis;
 
@@ -36,89 +39,114 @@ public class RedisAuthLink : IAuthLink {
 
 	public async Task<Result<string>> LogAccount(LoginRequest request) {
 		var db = _redis.GetDatabase();
-		string keyData = GetDataKey(request);
 
-		// Test existence
-		bool exists = await db.KeyExistsAsync(keyData);
-		if(!exists)
+		// Get UUID from username
+		string? uuid = await db.StringGetAsync(PREFIX_USERNAME + request.Username);
+		if(uuid == null)
 			return Result<string>.NotFoundError("Username or password incorrect.");
 
-		// Read entries
-		var entries = await db.HashGetAllAsync(keyData);
+		// Get data from UUID
+		HashEntry[]? entries = await db.HashGetAllAsync(PREFIX_DATA + uuid);
+		if(entries == null)
+			return Result<string>.InternalError("No account. Internal data has been lost.");
 		RedisMap map = new(entries);
 
+		// Compare passwords in data
+		string password = Utils.HashString(request.Password);
+		if(!string.Equals(map[AccountDataStructure.Structure.PasswordField], password))
+			return Result<string>.NotFoundError("Username or password incorrect.");
+
 		// Return UUID
-		return Result<string>.Success(map[IAuthLink.UUID]);
+		return Result<string>.Success(uuid);
 	}
 
 	public async Task<Result<string>> RegisterAccount(RegisterRequest request) {
+		var db = _redis.GetDatabase();
 		// Duplicate test
-		if(UniqueExists(AccountDataStructure.Structure.UsernameField, request.Username))
+		if(await db.KeyExistsAsync(PREFIX_USERNAME + request.Username))
 			return Result<string>.DuplicateError(AccountDataStructure.Structure.UsernameField);
 		foreach(var field in AccountDataStructure.Structure.UniqueFields) {
 			if(UniqueExists(field.Name, request.Fields[field]))
 				return Result<string>.DuplicateError(field.Name);
 		}
-		// UUID creation and password hash
-		string uuid = GenerateUUID();
-		string keyData = GetDataKey(request);
 
-		// Content
+		// UUID and password hash generation
+		string uuid = GenerateUUID();
+		string password = Utils.HashString(request.Password);
+
+		// Content generation
 		RedisMap map = new();
 		map[AccountDataStructure.Structure.UsernameField] = request.Username;
+		map[AccountDataStructure.Structure.PasswordField] = password;
 		map[IAuthLink.UUID] = uuid;
 		foreach(var kv in request.Fields) {
 			map[kv.Key.Name] = kv.Value;
 		}
 
-		// Calls
+		// username -> UUID
+		string keyUsername = PREFIX_USERNAME + request.Username;
+		await db.StringSetAsync(keyUsername, uuid);
+		await db.KeyPersistAsync(keyUsername);
+
+		// UUID -> [data]
+		string keyData = PREFIX_DATA + uuid;
+		await db.HashSetAsync(keyData, map.ToArray());
+		await db.KeyPersistAsync(keyData);
+
+		// Unique fields
 		await RegisterUniquesAsync(uuid, request);
 
-		await _redis.GetDatabase().HashSetAsync(keyData, map.ToArray());
-		await _redis.GetDatabase().KeyPersistAsync(keyData);
-
+		// Success
 		return Result<string>.Success(uuid);
 	}
 
 	public async Task DeleteAccount(string uuid) {
-		var batch = _redis.GetDatabase().CreateBatch();
-		await batch.KeyDeleteAsync(uuid);
-		foreach(var key in await GetKeysOfStringValue(uuid))
-			await batch.KeyDeleteAsync(key);
-		batch.Execute();
-	}
-
-	private async Task<List<RedisKey>> GetKeysOfStringValue(string value) {
-		HashSet<RedisKey> keys = new();
-		foreach(var ep in _redis.GetEndPoints())
-			keys.UnionWith(_redis.GetServer(ep).Keys());
-		keys.RemoveWhere(k => !k.ToString().Contains(PREFIX_UNIQUE));
-
-		List<RedisKey> list = new();
 		var db = _redis.GetDatabase();
-		foreach(var key in keys) {
-			var str = await db.StringGetAsync(key);
-			if(value.Equals(str))
-				list.Add(key);
+
+		// Get data relative to the account
+		var dataRedis = await db.HashGetAllAsync(PREFIX_DATA + uuid);
+		if(dataRedis.Length == 0)
+			return; // already deleted or doesn't exist
+		RedisMap data = new(dataRedis);
+
+		// Compute all keys to remove
+		List<string> toDeleteKeys = new() {
+			// uuid -> data
+			PREFIX_DATA + uuid,
+			// username -> uuid
+			PREFIX_USERNAME + data[AccountDataStructure.Structure.UsernameField]
+		};
+		foreach(var field in AccountDataStructure.Structure.UniqueFields) {
+			// uniques
+			toDeleteKeys.Add(PREFIX_UNIQUE + field.Name + ":" + data[field.Name]);
 		}
-		return list;
+
+		// Delete keys
+		foreach(var key in toDeleteKeys) {
+			await db.KeyDeleteAsync(key);
+			Console.WriteLine("Will delete key [" + key + "]");
+		}
 	}
 
 	public async Task<Result<List<Dictionary<string, string>>>> ListAccounts() {
 		HashSet<RedisKey> keys = new();
-		foreach(var ep in _redis.GetEndPoints())
-			keys.UnionWith(_redis.GetServer(ep).Keys());
-		keys.RemoveWhere(k => {
-			string[] tokens = k.ToString().Split(":");
-			if(tokens.Length == 2)
-				return tokens[1].Equals("__unique__");
-			return true;
-		});
+		foreach(var ep in _redis.GetEndPoints()) {
+			var rawKeys = new HashSet<RedisKey>(_redis.GetServer(ep).Keys());
+			rawKeys.RemoveWhere(rk => ! rk.ToString().StartsWith(PREFIX_DATA));
+			keys.UnionWith(rawKeys);
+		}
+
+		// DEBUG
+		Console.WriteLine(" all keys : ");
+		foreach(var k in keys)
+			Console.WriteLine("> " + k.ToString());
+		Console.WriteLine("-");
 
 		List<Dictionary<string, string>> list = new();
+		var db = _redis.GetDatabase();
 		foreach(var key in keys) {
 			Dictionary<string, string> values = new();
-			foreach(var kv in await _redis.GetDatabase().HashGetAllAsync(key)) {
+			foreach(var kv in await db.HashGetAllAsync(key)) {
 				if(! kv.Name.Equals(AccountDataStructure.Structure.PasswordField))
 					values[kv.Name.ToString()] = kv.Value.ToString();
 			}
@@ -129,10 +157,6 @@ public class RedisAuthLink : IAuthLink {
 	}
 
 	#region util methods
-	private static string GetDataKey(LoginRequest request) {
-		return PREFIX + Utils.HashString(request.Username) + "--" + Utils.HashString(request.Password);
-	}
-
 	private async Task<bool> RegisterUniquesAsync(string uuid, RegisterRequest request) {
 		var transaction = _redis.GetDatabase().CreateTransaction();
 		if(transaction == null)
@@ -145,9 +169,6 @@ public class RedisAuthLink : IAuthLink {
 				_ = transaction.KeyPersistAsync(key);
 			}
 		}
-		var usernameKey = PREFIX_UNIQUE + AccountDataStructure.Structure.UsernameField + ":" + request.Username;
-		_ = transaction.StringSetAsync(usernameKey, uuid);
-		_ = transaction.KeyPersistAsync(usernameKey);
 
 		return await transaction.ExecuteAsync();
 	}
