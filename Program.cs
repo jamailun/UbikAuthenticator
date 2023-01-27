@@ -28,7 +28,7 @@ if (app.Environment.IsDevelopment()) {
 
 	// Check authentication link
 	Console.WriteLine("Loading authentication link...");
-	Console.WriteLine(AuthLinkFactory.IAuth != null);
+	Console.WriteLine(DataStoreFactory.IAuth != null);
 }
 
 //app.UseHttpsRedirection();

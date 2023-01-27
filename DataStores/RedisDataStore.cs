@@ -5,7 +5,7 @@ using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks;
 
-public class RedisAuthLink : IAuthLink {
+public class RedisDataStore : IDataStore {
 
 	private const string PREFIX = "accounts:";
 	private const string PREFIX_UNIQUE = PREFIX+"unique:";
@@ -14,7 +14,7 @@ public class RedisAuthLink : IAuthLink {
 
 	private readonly ConnectionMultiplexer _redis;
 
-	public RedisAuthLink() {
+	public RedisDataStore() {
 		string? redisEndpoints = Environment.GetEnvironmentVariable("STORE.redis.endpoints");
 		string? redisUser = Environment.GetEnvironmentVariable("STORE.redis.user");
 		string? redisPassword = Environment.GetEnvironmentVariable("STORE.redis.password");
@@ -78,7 +78,7 @@ public class RedisAuthLink : IAuthLink {
 		RedisMap map = new();
 		map[AccountDataStructure.Structure.UsernameField] = request.Username;
 		map[AccountDataStructure.Structure.PasswordField] = password;
-		map[IAuthLink.UUID] = uuid;
+		map[IDataStore.UUID] = uuid;
 		foreach(var kv in request.Fields) {
 			map[kv.Key.Name] = kv.Value;
 		}
@@ -122,10 +122,8 @@ public class RedisAuthLink : IAuthLink {
 		}
 
 		// Delete keys
-		foreach(var key in toDeleteKeys) {
+		foreach(var key in toDeleteKeys)
 			await db.KeyDeleteAsync(key);
-			Console.WriteLine("Will delete key [" + key + "]");
-		}
 	}
 
 	public async Task<Result<List<Dictionary<string, string>>>> ListAccounts() {
@@ -135,12 +133,6 @@ public class RedisAuthLink : IAuthLink {
 			rawKeys.RemoveWhere(rk => ! rk.ToString().StartsWith(PREFIX_DATA));
 			keys.UnionWith(rawKeys);
 		}
-
-		// DEBUG
-		Console.WriteLine(" all keys : ");
-		foreach(var k in keys)
-			Console.WriteLine("> " + k.ToString());
-		Console.WriteLine("-");
 
 		List<Dictionary<string, string>> list = new();
 		var db = _redis.GetDatabase();

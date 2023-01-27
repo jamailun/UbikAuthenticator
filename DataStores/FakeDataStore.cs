@@ -2,7 +2,7 @@
 
 namespace UbikMmo.Authenticator.AuthLinks; 
 
-public class FakeAuthLink : IAuthLink {
+public class FakeDataStore : IDataStore {
 
 	private readonly List<SavedAccount> _accounts = new();
 

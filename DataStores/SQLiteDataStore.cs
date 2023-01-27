@@ -5,11 +5,11 @@ using UbikMmo.Authenticator.Structures;
 
 namespace UbikMmo.Authenticator.AuthLinks; 
 
-public class SQLiteAuthLink : IAuthLink, IDisposable {
+public class SQLiteDataStore : IDataStore, IDisposable {
 
 	private readonly SQLiteConnection sql;
 
-	public SQLiteAuthLink() {
+	public SQLiteDataStore() {
 		string? dbUri = Environment.GetEnvironmentVariable("STORE.sqlite.path");
 		if(dbUri == null) {
 			Console.WriteLine("WARNING: No environement variable for 'STORE.sqlite.path'.");
@@ -26,7 +26,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 		string password = Utils.HashString(request.Password);
 
 		using var cmd = new SQLiteCommand(sql);
-		cmd.CommandText = @"SELECT "+IAuthLink.UUID+" FROM Accounts WHERE username=@USER and passwordHash=@PWD;";
+		cmd.CommandText = @"SELECT "+IDataStore.UUID+" FROM Accounts WHERE username=@USER and passwordHash=@PWD;";
 		cmd.Parameters.AddWithValue("@USER", request.Username ?? throw new Exception("Email CANNOT be null."));
 		cmd.Parameters.AddWithValue("@PWD", password);
 		await cmd.PrepareAsync();
@@ -50,7 +50,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 			var uuid = GenerateUUID();
 			using var cmd = new SQLiteCommand(sql);
 
-			string tableSignature = IAuthLink.UUID + ", username, passwordHash";
+			string tableSignature = IDataStore.UUID + ", username, passwordHash";
 			string tableValues = "@UUID, @USERNAME, @PWD";
 			cmd.Parameters.AddWithValue("@UUID", uuid);
 			cmd.Parameters.AddWithValue("@USERNAME", request.Username);
@@ -81,7 +81,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 	public async Task DeleteAccount(string uuid) {
 		using var cmd = new SQLiteCommand(sql);
 
-		cmd.CommandText = $"DELETE FROM Accounts WHERE {IAuthLink.UUID}=@UUID;";
+		cmd.CommandText = $"DELETE FROM Accounts WHERE {IDataStore.UUID}=@UUID;";
 		cmd.Parameters.AddWithValue("@UUID", uuid);
 		await cmd.PrepareAsync();
 
@@ -98,7 +98,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 
 		while(reader.Read()) {
 			Dictionary<string, string> values = new() {
-				[IAuthLink.UUID] = reader[IAuthLink.UUID]?.ToString() ?? "",
+				[IDataStore.UUID] = reader[IDataStore.UUID]?.ToString() ?? "",
 				[AccountDataStructure.Structure.UsernameField] = reader[AccountDataStructure.Structure.UsernameField]?.ToString() ?? "",
 			};
 			foreach(var f in AccountDataStructure.Structure.Fields) {
@@ -119,7 +119,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 		string uuid;
 		do {
 			uuid = Utils.RandomString(32);
-		} while(ExistsInTable(IAuthLink.UUID, uuid));
+		} while(ExistsInTable(IDataStore.UUID, uuid));
 		return uuid;
 	}
 
@@ -134,7 +134,7 @@ public class SQLiteAuthLink : IAuthLink, IDisposable {
 	private void Initialize() {
 		using var cmd = new SQLiteCommand(sql);
 		cmd.CommandText = @"CREATE TABLE IF NOT EXISTS Accounts (
-			  " + IAuthLink.UUID + @" VARCHAR(64) PRIMARY KEY,
+			  " + IDataStore.UUID + @" VARCHAR(64) PRIMARY KEY,
 			  username VARCHAR(64) NOT NULL UNIQUE,
 			  passwordHash VARCHAR(256) NOT NULL";
 		foreach(var field in AccountDataStructure.Structure.Fields) {

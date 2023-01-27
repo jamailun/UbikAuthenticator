@@ -19,7 +19,7 @@ public class AccountsController : ControllerBase {
 			return BadRequest(requestResult.ErrorContent);
 
 		// Player authentication
-		Result<string> result = await AuthLinkFactory.IAuth.LogAccount(requestResult.SuccessValue);
+		Result<string> result = await DataStoreFactory.IAuth.LogAccount(requestResult.SuccessValue);
 		if(!result.IsSuccess) {
 			return BadRequest(result.ErrorContent);
 		}
@@ -44,7 +44,7 @@ public class AccountsController : ControllerBase {
 		if(!requestResult.IsSuccess)
 			return BadRequest(requestResult.ErrorContent);
 
-		Result<string> result = await AuthLinkFactory.IAuth.RegisterAccount(requestResult.SuccessValue);
+		Result<string> result = await DataStoreFactory.IAuth.RegisterAccount(requestResult.SuccessValue);
 		if(result.IsSuccess) {
 			string uuid = result.SuccessValue ?? throw new Exception("Internal error.");
 			AccountsManager.Instance.GetOrCreateTokenForAccount(uuid);
@@ -61,7 +61,7 @@ public class AccountsController : ControllerBase {
 		if(PermissionsGiver.GetPermission(Request) < PermissionLevel.AdminAccess)
 			return Unauthorized("Not enough permissions");
 
-		await AuthLinkFactory.IAuth.DeleteAccount(uuid);
+		await DataStoreFactory.IAuth.DeleteAccount(uuid);
 		AccountsManager.Instance.Remove(uuid);
 
 		return Ok();
@@ -74,7 +74,7 @@ public class AccountsController : ControllerBase {
 		if(PermissionsGiver.GetPermission(Request) < PermissionLevel.AdminAccess)
 			return Unauthorized("Not enough permissions");
 
-		var result = await AuthLinkFactory.IAuth.ListAccounts();
+		var result = await DataStoreFactory.IAuth.ListAccounts();
 
 		if(!result.IsSuccess)
 			return BadRequest(result.ErrorContent);

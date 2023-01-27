@@ -5,7 +5,7 @@ namespace UbikMmo.Authenticator.AuthLinks;
 /// <summary>
 /// A object linking UbikAuthenticator with a storage system.
 /// </summary>
-public interface IAuthLink {
+public interface IDataStore {
 
 	public const string UUID = "__uuid__";
 

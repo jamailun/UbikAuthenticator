@@ -1,16 +1,16 @@
 ﻿namespace UbikMmo.Authenticator.AuthLinks;
 
-public static class AuthLinkFactory {
+public static class DataStoreFactory {
 
-	private static IAuthLink? _iAuth;
-	public static IAuthLink IAuth {
+	private static IDataStore? _iAuth;
+	public static IDataStore IAuth {
 		get {
 			_iAuth ??= Factory();
 			return _iAuth;
 		}
 	}
 
-	private static IAuthLink Factory() {
+	private static IDataStore Factory() {
 		string? authName = Environment.GetEnvironmentVariable("STORE");
 		if(authName == null) {
 			return MessageThenDefault("No \"STORE\" variable set.");
@@ -18,16 +18,16 @@ public static class AuthLinkFactory {
 
 		Console.WriteLine("Building AuthLink '" + authName + "'.");
 		return authName switch {
-			"redis" => new RedisAuthLink(),
-			"sqlite" => new SQLiteAuthLink(),
-			"fake" => new FakeAuthLink(),
+			"redis" => new RedisDataStore(),
+			"sqlite" => new SQLiteDataStore(),
+			"fake" => new FakeDataStore(),
 			_ => MessageThenDefault("Unknown STORE value: \"" + authName+"\".")
 		};
 	}
 
-	private static IAuthLink MessageThenDefault(string message) {
+	private static IDataStore MessageThenDefault(string message) {
 		Console.WriteLine("WARNING: " + message + " Using fake storage.");
-		return new FakeAuthLink();
+		return new FakeDataStore();
 	}
 
 }
