@@ -1,5 +1,6 @@
+
 ﻿
-# Ubik Authenticator (WIP!)
+# Ubik Authenticator
 
 This API will serve as an authenticator in your future large scale multi-user or multiplayer project. It's scalable and micro-service oriented.
 
@@ -8,61 +9,25 @@ It's probably easier to maintain a stack of only one language ! That said, this 
 
 ## What does it need ?
 
-To use UbikAuthenticator, you will need:
-* [1, ...] instances of this Authenticator
-* If multiple instances exist, use [Redis](https://redis.io/). If not, a SQLite database auto-generated will be enough.
-* Game Servers. Each must handle data storage.
+This can be used more various scales. If you want only one instance of this, you could just create an instance of it with a basic nginx configuration, and have a local SQLite table. MySQL currently not provided.
+For a more larger scale, this Authenticator can be launched with multiple instances in the cloud and use [Redis](https://redis.io/) as a datastore. To summarize, UbikAuthenticator can work as a local tool or a cloud-solution product.
 
-# How to use
+## Advantages list
 
-This authenticator takes the form of an API and has two main routes: `/servers` and `/players`.
+Why use UbikAuthenticator ?
+* Free to use, deploy and modify,
+* Allow almost any form of [account structure](https://github.com/jamailun/UbikAuthenticator/wiki/Account-structure): makes it very polyvalent. In general, the main _moto_ of this project is to ctreate a super-customizable authentication solution.
 
-In a first time, UbikAuthenticator will receive all registrations from your servers. Indeed, it' will be the job of UbikAuth to tell to clients where to connect. Moreover, all servers will have to know the `SECRET_KEY` of UbikAuthenticator: if not any could pretend their machine is an official host !
-Then, all your servers will have to call:
-```json
-{
-  "method": "POST",
-  "URI": "{{host}}/servers/register/{{SECRET_KEY}}",
-  "body": {
-    "serverName": "_server_unique_identifier",
-    "serverUrl": "123.123.123.123:1234"
-  },
-  "returns": "server token"
-}
-```
+## More information
 
+For more information about UbikAuthenticator, please read detailled articles about [how to install](https://github.com/jamailun/UbikAuthenticator/wiki/Installation-guide) and [how to use](https://github.com/jamailun/UbikAuthenticator/wiki/How-to-use) in the github's wiki.
 
-## How does it work ?
-This authenticator is an intermediate and distributed actor that will do:
-* _(Game)_ Servers Registering,
-* Player authentication and redirection.
+(General detailled chart in progress.)
 
-**Initial Workflow: servers registering**
-```mermaid
-sequenceDiagram
-  participant S as Server
-  participant U as UbikAuthenticator
-	S ->> U  : /servers/register
-	U -->> S : server_token
-```
+### TODO
 
-**Runtime Workflow: players authentication**
-```mermaid
-sequenceDiagram
-  participant C as Client
-  participant U as UbikAuthenticator
-  participant B as AccountDB
-  participant S as Server
-
-	C ->> U  : /players/login
-	U ->> B  : Check if player exist
-	B -->> U : 
-	U -->> C : token + server address
-	
-  C ->> S  : authenticate(token)
-  S ->> U  : /players/check (server_token,token)
-	U -->> S : player_uuid
-	S -->> C : Connection allowed
-```
-
-
+- Add a way to customize informations returned to server after confirmation
+- Add a way to chose to force client to connect to the wanted server and not any other; or even to log in without any specific server.
+- different way to hadle secrets. 
+- Make the docker image ready to use.
+- Add support for MySQL and an other distributed BDD than Redis.
