@@ -23,7 +23,7 @@
 		}
 
 		public static PermissionLevel GetPermission(HttpRequest request) {
-			string token = request.Headers.Authorization.Aggregate((s1, s2) => s1 + " " + s2);
+			string token = request.Headers.Authorization.Count > 0 ? request.Headers.Authorization.Aggregate((s1, s2) => s1 + " " + s2) : "";
 			return GetPermission(token);
 		}
 

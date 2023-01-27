@@ -5,7 +5,7 @@ using UbikAuthenticator.Authorization;
 namespace UbikMmo.Authenticator.Controllers; 
 
 [ApiController]
-public class ServersRegistrationController : ControllerBase {
+public class ServersController : ControllerBase {
 
 	[HttpGet]
 	[Route("/servers/list")]
