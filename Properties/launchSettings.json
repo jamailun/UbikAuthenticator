@@ -5,7 +5,7 @@
       "launchUrl": "swagger",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "env": "env.properties"
+        "env": "Properties/env.properties"
       },
       "dotnetRunMessages": true,
       "applicationUrl": "http://localhost:5273",
@@ -14,9 +14,6 @@
     "Docker": {
       "commandName": "Docker",
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Production"
-      },
       "publishAllPorts": true,
       "useSSL": true,
       "httpPort": 80,

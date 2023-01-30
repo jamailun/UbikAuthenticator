@@ -8,8 +8,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-if(string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production"))
+if(builder.Environment.IsProduction()) {
 	builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(80));
+}
 
 var app = builder.Build();
 
@@ -40,4 +41,3 @@ if (app.Environment.IsDevelopment()) {
 app.MapControllers();
 
 app.Run();
-// */

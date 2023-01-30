@@ -2,7 +2,7 @@
 
 public static class UbikEnvironment {
 
-	private static readonly PropertiesReader props = new(Environment.GetEnvironmentVariable("env") ?? throw new Exception("No 'env' property defined."));
+	private static readonly PropertiesReader props = new(Environment.GetEnvironmentVariable("env") ?? "env.properties");
 
 	/// <summary>
 	/// Get an environment variable. Priority order is Environment > env.properties 
