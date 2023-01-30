@@ -2,6 +2,8 @@
 
 This API will serve as an authenticator in your future large scale multi-user or multiplayer project. It's scalable and micro-service oriented.
 
+![Explanations](.github/schema.png?raw=true "Explanations")
+
 ### Why C# ?
 It's probably easier to maintain a stack of only one language ! That said, this authenticator must just be deployed, and the language used isn't really that important.
 
