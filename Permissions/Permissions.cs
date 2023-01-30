@@ -1,4 +1,6 @@
-﻿namespace UbikAuthenticator.Authorization {
+﻿using UbikMmo.Authenticator;
+
+namespace UbikAuthenticator.Authorization {
 	
 	public class PermissionsGiver {
 
@@ -16,8 +18,8 @@
 		}
 
 		private PermissionsGiver() {
-			string keyServer = Environment.GetEnvironmentVariable(CONFIG_PERM_SERVER) ?? throw new Exception("No environment variable for " + CONFIG_PERM_SERVER);
-			string keyAdmin = Environment.GetEnvironmentVariable(CONFIG_PERM_ADMIN) ?? throw new Exception("No environment variable for " + CONFIG_PERM_ADMIN);
+			string keyServer = UbikEnvironment.GetString(CONFIG_PERM_SERVER) ?? throw new Exception("No environment variable for " + CONFIG_PERM_SERVER);
+			string keyAdmin = UbikEnvironment.GetString(CONFIG_PERM_ADMIN) ?? throw new Exception("No environment variable for " + CONFIG_PERM_ADMIN);
 			_permissions[keyServer] = PermissionLevel.ServerAccess;
 			_permissions[keyAdmin] = PermissionLevel.AdminAccess;
 		}

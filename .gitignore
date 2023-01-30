@@ -4,3 +4,7 @@ bin/
 obj/
 
 *.sln
+*.csproj.user
+
+appsettings.json
+appsettings.Development.*

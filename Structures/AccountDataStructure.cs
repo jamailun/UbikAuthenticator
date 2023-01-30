@@ -18,7 +18,7 @@ public class AccountDataStructure {
 	}
 
 	private AccountDataStructure() {
-		var fields = Parse(Utils.LoadStructuresFile());
+		var fields = ParseEnv();
 		UsernameField = fields.Find(f => f.Type == FieldType.Username)?.Name ?? throw new Exception();
 		PasswordField = fields.Find(f => f.Type == FieldType.Password)?.Name ?? throw new Exception();
 		Fields = fields.FindAll(f => f.Type != FieldType.Username && f.Type != FieldType.Password);
@@ -109,20 +109,11 @@ public class AccountDataStructure {
 		}
 	}
 
-	private static List<StructureField> Parse(JsonObject root) {
-		JsonNode? dataNode = root["account_data"];
-		if(dataNode == null)
-			throw new Exception("structures file must contain 'account_data' entry.");
-		if(dataNode.GetType() != typeof(JsonObject))
-			throw new Exception("structures file must contain 'account_data' entry as an object, not an array.");
-		JsonObject data = (JsonObject) dataNode;
-
+	private static List<StructureField> ParseEnv() {
 		List<StructureField> list = new();
-		foreach(var kv in data) {
-			JsonNode? node = kv.Value;
-			if(node == null)
-				throw new Exception("structures file contains null value: 'account_data."+kv.Key+"'.");
-			list.Add(new(kv.Key, node.ToString()));
+		foreach(var entry in UbikEnvironment.GetDict("STRUCT.account.")) {
+			string key = entry.Key.Split(".", 3)[2];
+			list.Add(new(key, entry.Value));
 		}
 
 		int countUser = list.FindAll(sf => sf.Type == FieldType.Username).Count;

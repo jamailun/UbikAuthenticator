@@ -31,6 +31,6 @@ public class StructureField {
 	}
 
 	public override string ToString() {
-		return "{'" + Name + "' " + Type.ToString() + (Required ? " REQUIRED" : "") + (Required ? " UNIQUE" : "") + "}";
+		return "{'" + Name + "' " + Type.ToString() + (Required ? " REQUIRED" : "") + (Unique ? " UNIQUE" : "") + "}";
 	}
 }

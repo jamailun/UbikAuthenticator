@@ -1,36 +1,26 @@
-﻿{
-  "$schema": "https://json.schemastore.org/launchsettings.json",
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,  
-    "iisExpress": {
-      "applicationUrl": "http://localhost:30825",
-      "sslPort": 44370
-    }
-  },
+{
   "profiles": {
-    "Authentication": {
+    "UbikAuthenticator": {
       "commandName": "Project",
-      "dotnetRunMessages": true,
-      "launchBrowser": true,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:7194;http://localhost:5273",
       "environmentVariables": {
-        // ASP
         "ASPNETCORE_ENVIRONMENT": "Development",
-        // OTHERS
-        "SALT": "S0m3_S4Lt",
-        "EMAIL_REGEX": "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$",
-        // SECRETS
-        "SECRET.server": "my_secret_key_server",
-        "SECRET.admin": "my_secret_key_admin",
-        // STORAGE
-        "STORE": "redis",
-        "STORE.sqlite.path": "F:\\tests\\ubikAuth.db",
-        "STORE.redis.endpoints": "redis-example.0.eu-central.cloud.redislabs.com:12345",
-        "STORE.redis.password": "my_redis_password;",
-        "STORE.redis.user": "my_redis_account"
-      }
+        "env": "env.properties"
+      },
+      "dotnetRunMessages": true,
+      "applicationUrl": "http://localhost:5273",
+      "hotReloadEnabled": true
+    },
+    "Docker": {
+      "commandName": "Docker",
+      "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      },
+      "publishAllPorts": true,
+      "useSSL": true,
+      "httpPort": 80,
+      "sslPort": 443
     },
     "IIS Express": {
       "commandName": "IISExpress",
@@ -39,6 +29,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    }
+  },
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:30825",
+      "sslPort": 44370
     }
   }
 }

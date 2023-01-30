@@ -51,7 +51,7 @@ public static class FieldTypeExtensions {
 			case FieldType.Bool:
 				return bool.TryParse(value, out _);
 			case FieldType.Email:
-				string regex = Environment.GetEnvironmentVariable("EMAIL_REGEX") ?? "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
+				string regex = UbikEnvironment.GetString("EMAIL_REGEX") ?? "^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$";
 				return Regex.IsMatch(value, regex, RegexOptions.IgnoreCase);
 			case FieldType.Json:
 				try {

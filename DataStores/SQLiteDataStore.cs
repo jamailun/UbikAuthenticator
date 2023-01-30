@@ -10,7 +10,7 @@ public class SQLiteDataStore : IDataStore, IDisposable {
 	private readonly SQLiteConnection sql;
 
 	public SQLiteDataStore() {
-		string? dbUri = Environment.GetEnvironmentVariable("STORE.sqlite.path");
+		string? dbUri = UbikEnvironment.GetString("STORE.sqlite.path");
 		if(dbUri == null) {
 			Console.WriteLine("WARNING: No environement variable for 'STORE.sqlite.path'.");
 			dbUri = "./sqlite.db";

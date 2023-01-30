@@ -11,7 +11,7 @@ public static class DataStoreFactory {
 	}
 
 	private static IDataStore Factory() {
-		string? authName = Environment.GetEnvironmentVariable("STORE");
+		string? authName = UbikEnvironment.GetString("STORE");
 		if(authName == null) {
 			return MessageThenDefault("No \"STORE\" variable set.");
 		}

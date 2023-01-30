@@ -9,7 +9,7 @@ public static class Utils {
 	private static string? _salt;
 	public static string Salt {
 		get {
-			_salt ??= Environment.GetEnvironmentVariable("SALT") ?? "";
+			_salt ??= UbikEnvironment.GetString("SALT") ?? "";
 			return _salt;
 		}
 	}

@@ -8,6 +8,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+if(string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Production"))
+	builder.WebHost.ConfigureKestrel(options => options.ListenAnyIP(80));
+
 var app = builder.Build();
 
 // Develoment mode
@@ -24,7 +27,7 @@ if (app.Environment.IsDevelopment()) {
 
 	// Check account structure
 	Console.WriteLine("Loading account structure...");
-	Console.WriteLine(AccountDataStructure.Structure != null);
+	Console.WriteLine(AccountDataStructure.Structure);
 
 	// Check authentication link
 	Console.WriteLine("Loading authentication link...");

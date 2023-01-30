@@ -15,9 +15,9 @@ public class RedisDataStore : IDataStore {
 	private readonly ConnectionMultiplexer _redis;
 
 	public RedisDataStore() {
-		string? redisEndpoints = Environment.GetEnvironmentVariable("STORE.redis.endpoints");
-		string? redisUser = Environment.GetEnvironmentVariable("STORE.redis.user");
-		string? redisPassword = Environment.GetEnvironmentVariable("STORE.redis.password");
+		string? redisEndpoints = UbikEnvironment.GetString("STORE.redis.endpoints");
+		string? redisUser = UbikEnvironment.GetString("STORE.redis.user");
+		string? redisPassword = UbikEnvironment.GetString("STORE.redis.password");
 		if(redisEndpoints == null || redisUser == null || redisPassword == null) {
 			throw new ArgumentException("Could not get environment variable 'STORE.redis.{endpoints/user/password}'.");
 		}
